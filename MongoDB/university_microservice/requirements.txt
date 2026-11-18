@@ -4,3 +4,4 @@ mcp>=2,<3
 ollama>=0.6,<1
 requests>=2.32,<3
 python-dotenv>=1.0,<2
+redis>=6,<9

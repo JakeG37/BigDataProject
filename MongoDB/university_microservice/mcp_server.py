@@ -1,8 +1,8 @@
-"""AI/MCP client -> MCP server -> existing Flask API -> MongoDB."""
+"""Expose the Atlas sales and Redis statistics Flask APIs through MCP."""
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import requests
 from dotenv import load_dotenv
@@ -10,6 +10,7 @@ from mcp.server import MCPServer
 
 load_dotenv(Path(__file__).with_name('.env'))
 API_URL = os.getenv('FLASK_API_URL', 'http://127.0.0.1:5001').rstrip('/')
+REDIS_API_URL = os.getenv('REDIS_API_URL', 'http://127.0.0.1:5002').rstrip('/')
 mcp = MCPServer('Supply Store Sales')
 
 
@@ -37,6 +38,24 @@ def search_sales(location: str, year: Optional[int] = None,
 
     if response.status_code != 200:
         raise RuntimeError(f'Sales API returned HTTP {response.status_code}')
+    return response.json()
+
+
+@mcp.tool()
+def get_statistics(key: Literal['active_users']) -> dict:
+    """Get the demo application's active-user count from Redis.
+
+    Use key 'active_users' for questions about how many users are active in the
+    app. The value is a separate demo statistic with no store or year filter.
+    """
+    try:
+        response = requests.get(f'{REDIS_API_URL}/statistics/{key}', timeout=5)
+    except requests.RequestException as exc:
+        raise RuntimeError('Cannot reach the Flask statistics API') from exc
+
+    if response.status_code != 200:
+        error = response.json().get('error', 'Statistics lookup failed')
+        raise RuntimeError(f'Statistics API returned HTTP {response.status_code}: {error}')
     return response.json()
 
 

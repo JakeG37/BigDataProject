@@ -16,14 +16,21 @@ async def main():
         print('Available MCP tools:')
         for tool in tools.tools:
             print('-', tool.name, tool.input_schema)
-        result = await client.call_tool(
-            'search_sales', {'location': 'Seattle', 'year': 2015, 'limit': 5}
+        calls = (
+            ('search_sales', {'location': 'Seattle', 'year': 2015, 'limit': 5}),
+            ('get_statistics', {'key': 'active_users'}),
         )
-        for item in result.content:
-            if item.type == 'text':
-                print(item.text)
-        if result.is_error:
-            raise RuntimeError('MCP tool call failed; check Flask and Atlas')
+        failed_tools = []
+        for name, arguments in calls:
+            print(f'\n{name} results:')
+            result = await client.call_tool(name, arguments)
+            for item in result.content:
+                if item.type == 'text':
+                    print(item.text)
+            if result.is_error:
+                failed_tools.append(name)
+        if failed_tools:
+            raise RuntimeError(f'MCP calls failed: {", ".join(failed_tools)}')
 
 
 if __name__ == '__main__':
