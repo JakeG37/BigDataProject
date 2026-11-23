@@ -18,7 +18,7 @@ async def main():
             print('-', tool.name, tool.input_schema)
         calls = (
             ('search_sales', {'location': 'Seattle', 'year': 2015, 'limit': 5}),
-            ('get_statistics', {'key': 'active_users'}),
+            ('get_statistics', {'location': 'Seattle', 'year': 2015}),
         )
         failed_tools = []
         for name, arguments in calls:

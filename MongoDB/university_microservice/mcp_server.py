@@ -2,7 +2,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 import requests
 from dotenv import load_dotenv
@@ -42,14 +42,19 @@ def search_sales(location: str, year: Optional[int] = None,
 
 
 @mcp.tool()
-def get_statistics(key: Literal['active_users']) -> dict:
-    """Get the demo application's active-user count from Redis.
+def get_statistics(location: str, year: int) -> dict:
+    """Get synthetic online storefront activity for a store city and year.
 
-    Use key 'active_users' for questions about how many users are active in the
-    app. The value is a separate demo statistic with no store or year filter.
+    Returns annual catalog sessions, sessions with a cart, and checkout
+    starts from Redis. Covers Austin, Denver, London, New York, San Diego, and
+    Seattle for 2013 through 2017. This is simulated website engagement data.
     """
     try:
-        response = requests.get(f'{REDIS_API_URL}/statistics/{key}', timeout=5)
+        response = requests.get(
+            f'{REDIS_API_URL}/statistics/storefront_activity',
+            params={'location': location, 'year': year},
+            timeout=5,
+        )
     except requests.RequestException as exc:
         raise RuntimeError('Cannot reach the Flask statistics API') from exc
 

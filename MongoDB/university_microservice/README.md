@@ -1,11 +1,12 @@
 # Supply-store sales and Redis statistics MCP lab
 
 Atlas holds the existing **sample_supplies.sales** collection. Redis Cloud
-holds the separate `active_users` demo statistic, an app-wide count.
+holds fictional online storefront activity by location and year. The Redis
+fixture covers the six Atlas store cities for 2013 through 2017.
 
 ```text
 HTTP client -> Flask /sales (5001) -> Atlas sample_supplies.sales
-HTTP client -> Flask /statistics/active_users (5002) -> Redis Cloud active_users
+HTTP client -> Flask /statistics/storefront_activity (5002) -> Redis Cloud activity
 User question -> Ollama (11434) selects tools -> MCP client invokes tools
 MCP server (5000) -> search_sales -> sales Flask API -> Atlas
                   -> get_statistics -> statistics Flask API -> Redis
@@ -95,17 +96,19 @@ enabled for deployment. If the console provides a CA certificate, download
 it and set `REDIS_CA_FILE` to its local path. An existing non-TLS lab endpoint
 requires setting `REDIS_TLS=false` explicitly.
 
-From the project folder, check the connection and whether the read-only demo
-key is present:
+From the project folder, check the connection and seed the lab database once:
 
 ```cmd
-venv\Scripts\python.exe -c "from redis_app import redis_client; print('Redis Cloud reachable:', redis_client.ping()); print('Active-user key present:', redis_client.get('active_users') is not None)"
+venv\Scripts\python.exe -c "from redis_app import redis_client; print('Redis Cloud reachable:', redis_client.ping())"
+venv\Scripts\python.exe seed_storefront_activity.py
 ```
 
-The Flask endpoint reads an existing `active_users` key. If the key is missing
-and you manage the lab database, you can initialize a fictitious count through
-your Redis client with `SET active_users 42 NX`. `NX` preserves any existing
-value.
+The seed script loads [storefront_activity.json](storefront_activity.json)
+into the `supply_lab:storefront_activity` Redis hash. It preserves any existing
+row with the same city and year. Each row contains catalog sessions, sessions
+that added something to a cart, and checkout starts. The figures are fictional
+and represent website activity. A checkout start is an attempt to check out.
+The Flask and MCP interfaces expose read operations.
 
 Start the statistics API in its own Command Prompt from the project folder:
 
@@ -116,11 +119,12 @@ venv\Scripts\python.exe redis_app.py
 Leave that window open. In another window, verify the Redis REST response:
 
 ```cmd
-curl.exe --fail-with-body "http://127.0.0.1:5002/statistics/active_users"
+curl.exe --fail-with-body "http://127.0.0.1:5002/statistics/storefront_activity?location=Seattle&year=2015"
 ```
 
-If the demo key contains 42, the response is `{"key":"active_users","value":42}`. An unset statistic
-returns HTTP 404, and an unavailable Redis server returns HTTP 503.
+Seattle in 2015 returns 10,840 catalog sessions, 1,951 cart sessions, and 856
+checkout starts, with `"synthetic": true`. Invalid input returns HTTP 400,
+an unseeded city and year returns 404, and a Redis failure returns 503.
 
 ## Test MCP
 
@@ -139,7 +143,7 @@ venv\Scripts\python.exe demo_mcp_client.py
 
 The direct test connects to `http://127.0.0.1:5000/mcp`. It lists both tools and
 calls `search_sales` with Seattle, 2015, and a limit of 5, then calls
-`get_statistics` with `active_users`. Compare each result with its REST
+`get_statistics` with Seattle and 2015. Compare each result with its REST
 response.
 
 ## Add Ollama (lecture pages 8 and 11)
@@ -160,14 +164,15 @@ already be running; check with `ollama list`.
 Keep both Flask APIs and MCP running. From this project folder run:
 
 ```cmd
-venv\Scripts\python.exe ollama_client.py "Find five sales from Seattle in 2015. Give their dates and purchase methods. Also report the demo app's active-user count."
+venv\Scripts\python.exe ollama_client.py "Show five Seattle sales from 2015 with dates and purchase methods. Also give Seattle's catalog sessions, cart sessions, and checkout starts for 2015."
 ```
 
 Without an argument, the script asks for a question. It discovers tools over
 MCP, translates their names/descriptions/input schemas into Ollama function
 definitions, lets the model choose tool calls, executes those calls through MCP,
-and sends the results back to Ollama for a final answer. The model has no direct
-database connection. The trace prints discovered tools, chosen arguments, and
+and sends the results back to Ollama. A separate, structured response supplies
+the text printed under `Answer:`. The model has no direct database connection.
+The trace prints discovered tools, chosen arguments, and
 tool status. Verify that it calls both tools successfully and that the final
 answer agrees with the direct MCP results.
 
