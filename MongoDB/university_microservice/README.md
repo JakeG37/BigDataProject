@@ -146,7 +146,7 @@ calls `search_sales` with Seattle, 2015, and a limit of 5, then calls
 `get_statistics` with Seattle and 2015. Compare each result with its REST
 response.
 
-## Add Ollama (lecture pages 8 and 11)
+## Add Ollama 
 
 Install the Ollama Windows application from https://ollama.com/download/windows
 and open it. The Python package alone does not install the local model server.
