@@ -185,24 +185,6 @@ OLLAMA_MODEL=qwen3:4b
 ```
 
 The client limits model rounds, tool calls, and request duration. The REST API
-validates filters and caps records at 100. These limits help with the lecture's
+validates filters and caps records at 100. These limits help with the
 runaway-request discussion; they are not server-wide rate limiting. A shared
 deployment would also need authentication, rate limits, and concurrency limits.
-
-## Relation to the full lecture lab
-
-The project now uses `MCPServer` and `Client` from MCP SDK **2.x**, matching the
-professor's template. Use port **5000** consistently for MCP; the slide 10
-example uses 8000, while the template and this project use 5000. The sales
-and statistics Flask APIs use 5001 and 5002, respectively.
-
-Slide 13 asks for a procedure/code report, comparison of REST and MCP, a security
-discussion, and a group presentation. Use actual results in the report; the
-sample-record count does not represent total sales in a city or year.
-
-References:
-
-- [Atlas sample supplies schema](https://www.mongodb.com/docs/manual/sample-data/sample-supplies/)
-- [MCP SDK client](https://py.sdk.modelcontextprotocol.io/client/)
-- [Ollama tool calling](https://docs.ollama.com/capabilities/tool-calling)
-- [Connect redis-py to Redis Cloud](https://redis.io/docs/latest/develop/clients/redis-py/connect/)
